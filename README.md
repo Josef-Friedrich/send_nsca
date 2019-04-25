@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.org/Roguelazer/send_nsca.png?branch=master)](https://travis-ci.org/Roguelazer/send_nsca)
-
+[![Build Status](https://travis-ci.org/Josef-Friedrich/send_nsca.svg?branch=master)](https://travis-ci.org/Josef-Friedrich/send_nsca)
 
 Overview
 ----
