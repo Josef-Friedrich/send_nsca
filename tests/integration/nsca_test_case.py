@@ -48,8 +48,8 @@ def pick_unused_port():
     return port
 
 
-HostCheckResult = collections.namedtuple("HostCheckResult", ["host_name", "status", "output"])
-ServiceCheckResult = collections.namedtuple("ServiceCheckResult", ["host_name", "service_name", "status", "output"])
+HostCheckResult = collections.namedtuple('HostCheckResult', ['host_name', 'status', 'output'])
+ServiceCheckResult = collections.namedtuple('ServiceCheckResult', ['host_name', 'service_name', 'status', 'output'])
 
 
 class NSCATestCase(TestCase):
@@ -62,7 +62,7 @@ class NSCATestCase(TestCase):
             f.write(NSCA_CFG_TEMPLATE % {'command_file': self.fifo_name, 'crypto_method': self.crypto_method, 'port': self.server_port})
         with open(self.send_nsca_config_path, 'w') as f:
             f.write(SEND_NSCA_CFG_TEMPLATE % {'crypto_method': self.crypto_method})
-        self.nsca_process = subprocess.Popen(["nsca", "-f", "-c", self.nsca_config_path])
+        self.nsca_process = subprocess.Popen(['nsca', '-f', '-c', self.nsca_config_path])
         time.sleep(0.25)  # give nsca a moment to start up
 
     def expect_checks(self, n_checks):
@@ -81,7 +81,7 @@ class NSCATestCase(TestCase):
             while True:
                 try:
                     l = self.read_end.readline()
-                    if not l.rstrip("\n"):
+                    if not l.rstrip('\n'):
                         break
                     lines.append(self.parse_line(l))
                 except IOError:
@@ -89,7 +89,7 @@ class NSCATestCase(TestCase):
             if len(lines) == n_checks:
                 break
         else:
-            raise AssertionError("Read %d lines after %0.2fs, expected %d" % (len(lines), (now - start_time), n_checks))
+            raise AssertionError('Read %d lines after %0.2fs, expected %d' % (len(lines), (now - start_time), n_checks))
         return lines
 
     @property
@@ -101,17 +101,17 @@ class NSCATestCase(TestCase):
 
     @staticmethod
     def parse_line(l):
-        l = l.rstrip("\n")
-        time, rest = l.split(" ", 1)
+        l = l.rstrip('\n')
+        time, rest = l.split(' ', 1)
         time = time[1:-1]
-        if rest.startswith("PROCESS_HOST_CHECK_RESULT"):
-            _, host_name, status, output = rest.split(";")
+        if rest.startswith('PROCESS_HOST_CHECK_RESULT'):
+            _, host_name, status, output = rest.split(';')
             return HostCheckResult(host_name=host_name, status=int(status), output=output)
-        elif rest.startswith("PROCESS_SERVICE_CHECK_RESULT"):
-            _, host_name, service_name, status, output = rest.split(";")
+        elif rest.startswith('PROCESS_SERVICE_CHECK_RESULT'):
+            _, host_name, service_name, status, output = rest.split(';')
             return ServiceCheckResult(host_name=host_name, service_name=service_name, status=int(status), output=output)
         else:
-            raise ValueError("Unexpected result type %s" % rest.split(";")[0])
+            raise ValueError('Unexpected result type %s' % rest.split(';')[0])
 
     def setUp(self):
         self.working_directory = tempfile.mkdtemp()

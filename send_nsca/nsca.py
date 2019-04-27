@@ -53,7 +53,7 @@ PACKET_VERSION = 3
 
 DEFAULT_PORT = 5667
 
-log = logging.getLogger("send_nsca")
+log = logging.getLogger('send_nsca')
 
 ########  CIPHERS AND CRYPTERS IMPLEMENTATION ########
 
@@ -77,7 +77,7 @@ class Crypter(six.with_metaclass(_MetaCrypter, object)):
         self.random_generator = random_generator
 
     def encrypt(self, value):
-        raise NotImplementedError("Implement me!")
+        raise NotImplementedError('Implement me!')
 
 
 class UnsupportedCrypter(Crypter):
@@ -264,10 +264,10 @@ class ConfigParseError(Exception):
         self.msg = msg
 
     def __str__(self):
-        return "Configuration parsing error: [%s:%d] %s" % (self.filename, self.lineno, self.msg)
+        return 'Configuration parsing error: [%s:%d] %s' % (self.filename, self.lineno, self.msg)
 
     def __repr__(self):
-        return "ConfigParseError(%s, %d, %s)" % (self.filename, self.lineno, self.msg)
+        return 'ConfigParseError(%s, %d, %s)' % (self.filename, self.lineno, self.msg)
 
 
 class NscaSender(object):
@@ -294,7 +294,7 @@ class NscaSender(object):
             with open(config_path, 'rb') as f:
                 self.parse_config(f, config_path=config_path)
 
-    def parse_config(self, config_file_object, config_path=""):
+    def parse_config(self, config_file_object, config_path=''):
         config_file_object.seek(0)
         for line_no, line in enumerate(config_file_object):
             if b'=' not in line or line.lstrip().startswith(b'#'):
@@ -303,7 +303,7 @@ class NscaSender(object):
             try:
                 if key == b'password':
                     if len(value) > MAX_PASSWORD_LENGTH:
-                        raise ConfigParseError(config_path, line_no, "Password too long; max %d" % MAX_PASSWORD_LENGTH)
+                        raise ConfigParseError(config_path, line_no, 'Password too long; max %d' % MAX_PASSWORD_LENGTH)
                     assert isinstance(value, bytes), value
                     self.password = value
                 elif key == b'encryption_method':
@@ -312,38 +312,38 @@ class NscaSender(object):
                         raise ConfigParseError(
                             config_path,
                             line_no,
-                            "Unrecognized uncryption method %d" % (self.encryption_method_i,)
+                            'Unrecognized uncryption method %d' % (self.encryption_method_i,)
                         )
                     self.Crypter = crypters[self.encryption_method_i]
                     if issubclass(self.Crypter, UnsupportedCrypter):
                         raise ConfigParseError(
                             config_path,
                             line_no,
-                            "Unsupported cipher type %d (%s)" % (self.Crypter.crypt_id, self.Crypter.__name__)
+                            'Unsupported cipher type %d (%s)' % (self.Crypter.crypt_id, self.Crypter.__name__)
                         )
                 else:
-                    raise ConfigParseError(config_path, line_no, "Unrecognized key '%s'" % (key,))
+                    raise ConfigParseError(config_path, line_no, 'Unrecognized key \'%s\'' % (key,))
             except ConfigParseError:
                 raise
             except:
-                raise ConfigParseError(config_path, line_no, "Could not parse value '%s' for key '%s'" % (value, key))
+                raise ConfigParseError(config_path, line_no, 'Could not parse value \'%s\' for key \'%s\'' % (value, key))
 
     def _check_alert(self, host=None, service=None, state=None, description=None):
         if state not in nagios.States.keys():
-            raise ValueError("state %r should be one of {%s}" % (state, ','.join(map(str, nagios.States.keys()))))
+            raise ValueError('state %r should be one of {%s}' % (state, ','.join(map(str, nagios.States.keys()))))
         if not isinstance(host, bytes):
-            raise ValueError("host %r must be a non-unicode string" % (host))
+            raise ValueError('host %r must be a non-unicode string' % (host))
         if len(host) > MAX_HOSTNAME_LENGTH:
-            raise ValueError("host %r too long (max length %d)" % (host, MAX_HOSTNAME_LENGTH))
+            raise ValueError('host %r too long (max length %d)' % (host, MAX_HOSTNAME_LENGTH))
         if not isinstance(description, bytes):
-            raise ValueError("plugin output %r must be a non-unicode string" % (description))
+            raise ValueError('plugin output %r must be a non-unicode string' % (description))
         if len(description) > MAX_PLUGINOUTPUT_LENGTH:
-            raise ValueError("plugin output %r too long (max length %d)" % (description, MAX_PLUGINOUTPUT_LENGTH))
+            raise ValueError('plugin output %r too long (max length %d)' % (description, MAX_PLUGINOUTPUT_LENGTH))
         if service is not None:
             if not isinstance(service, bytes):
-                raise ValueError("service %r must be a non-unicode string" % (service))
+                raise ValueError('service %r must be a non-unicode string' % (service))
             if len(service) > MAX_DESCRIPTION_LENGTH:
-                raise ValueError("service %r too long (max length %d)" % (service, MAX_DESCRIPTION_LENGTH))
+                raise ValueError('service %r too long (max length %d)' % (service, MAX_DESCRIPTION_LENGTH))
 
     def send_service(self, host, service, state, description):
         self._check_alert(host=host, service=service, state=state, description=description)
@@ -374,7 +374,7 @@ class NscaSender(object):
             except socket.error:
                 continue
         if not conns:
-            raise socket.error("could not connect to %s:%d" % (self.remote_host, self.port))
+            raise socket.error('could not connect to %s:%d' % (self.remote_host, self.port))
         return conns
 
     def _handshake_all(self, conns):
