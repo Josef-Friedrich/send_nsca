@@ -19,7 +19,6 @@
 # This software is available under the terms of the Lesser GNU Public
 # License, Version 2.1
 
-from __future__ import with_statement
 
 import array
 import binascii
