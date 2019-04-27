@@ -1,7 +1,6 @@
 import socket
 
-import mock
-from unittest2 import TestCase
+from unittest import TestCase, mock
 
 import send_nsca
 from send_nsca.nsca import DEFAULT_PORT

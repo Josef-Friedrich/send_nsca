@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import time
 
-from unittest2 import TestCase
+from unittest import TestCase
 
 from send_nsca.nsca import NscaSender
 
