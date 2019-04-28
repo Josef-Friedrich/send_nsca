@@ -24,6 +24,7 @@ Changes on this fork:
 =====================
 
 * All code in one file.
+* Python 3 only
 """
 
 import array
@@ -35,15 +36,18 @@ import os
 import random
 import socket
 import struct
-
-import Crypto.Cipher.AES
-import Crypto.Cipher.ARC2
-import Crypto.Cipher.Blowfish
-import Crypto.Cipher.DES
-import Crypto.Cipher.DES3
-import Crypto.Cipher.CAST
-import Crypto.Util.randpool
 import six
+
+try:
+    import Crypto.Cipher.AES
+    import Crypto.Cipher.ARC2
+    import Crypto.Cipher.Blowfish
+    import Crypto.Cipher.DES
+    import Crypto.Cipher.DES3
+    import Crypto.Cipher.CAST
+    import Crypto.Util.randpool
+except ImportError:
+    pass
 
 version_info = (0, 1, 4, 1)
 __version__ = ".".join(map(str, version_info)) + '-yelp1'
