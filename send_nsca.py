@@ -31,12 +31,13 @@ Changes on this fork:
 * Works without `pycrypto` (only `encryption_method` 1 works)
 
 Another interesting Python package that sends NSCA messages is
-`pynsca https://github.com/djmitche/pynsca`_.
+`pynsca <https://github.com/djmitche/pynsca>`_.
 
 Usage
 =====
 
 .. code:: python
+
     import send_nsca
     send_nsca.send_nsca(
         status=send_nsca.STATE_OK,
