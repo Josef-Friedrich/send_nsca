@@ -122,8 +122,10 @@ class XORCrypter(Crypter):
 
     def encrypt(self, value):
         value_s = six.iterbytes(value)
-        repeated_iv = six.iterbytes(list(int(math.ceil(float(len(value)) / len(self.iv))) * self.iv))
-        repeated_password = six.iterbytes(list(int(math.ceil(float(len(value)) / len(self.password))) * self.password))
+        repeated_iv = six.iterbytes(
+            list(int(math.ceil(float(len(value)) / len(self.iv))) * self.iv))
+        repeated_password = six.iterbytes(
+            list(int(math.ceil(float(len(value)) / len(self.password))) * self.password))
         xor1 = [a ^ b for a, b in zip(value_s, repeated_iv)]
         xor2 = [a ^ b for a, b in zip(xor1, repeated_password)]
         return b''.join(map(six.int2byte, xor2))
@@ -154,7 +156,8 @@ class CryptoCrypter(Crypter):
             iv = self.iv[:iv_size]
         else:
             iv += self.random_generator(iv_size - self.iv)
-        self.crypter = self.CryptoCipher.new(key, self.CryptoCipher.MODE_CFB, iv)
+        self.crypter = self.CryptoCipher.new(
+            key, self.CryptoCipher.MODE_CFB, iv)
 
     def encrypt(self, value):
         return self.crypter.encrypt(value)
@@ -240,12 +243,15 @@ class AES256Crypter(CryptoCrypter):
 
 ########  WIRE PROTOCOL IMPLEMENTATION ########
 
-_data_packet_format = '!hxxLLh%ds%ds%dsxx' % (MAX_HOSTNAME_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_PLUGINOUTPUT_LENGTH)
+
+_data_packet_format = '!hxxLLh%ds%ds%dsxx' % (
+    MAX_HOSTNAME_LENGTH, MAX_DESCRIPTION_LENGTH, MAX_PLUGINOUTPUT_LENGTH)
 _init_packet_format = '!%dsL' % (_TRANSMITTED_IV_SIZE,)
 
 
 def get_random_alphanumeric_bytes(bytesz):
-    return ''.join(chr(random.randrange(ord('0'), ord('Z'))) for _ in range(bytesz)).encode('US-ASCII')
+    return ''.join(chr(random.randrange(ord('0'), ord('Z')))
+                   for _ in range(bytesz)).encode('US-ASCII')
 
 
 def _pack_packet(hostname, service, state, output, timestamp):
@@ -261,20 +267,35 @@ def _pack_packet(hostname, service, state, output, timestamp):
     # next, pad & pack the hostname
     hostname = hostname + b'\0'
     if len(hostname) < MAX_HOSTNAME_LENGTH:
-        hostname += get_random_alphanumeric_bytes(MAX_HOSTNAME_LENGTH - len(hostname))
+        hostname += get_random_alphanumeric_bytes(
+            MAX_HOSTNAME_LENGTH - len(hostname))
     struct.pack_into('!%ds' % (MAX_HOSTNAME_LENGTH,), packet, offset, hostname)
     offset += struct.calcsize('!%ds' % (MAX_HOSTNAME_LENGTH,))
     # next, pad & pack the service description
     service = service + b'\0'
     if len(service) < MAX_DESCRIPTION_LENGTH:
-        service += get_random_alphanumeric_bytes(MAX_DESCRIPTION_LENGTH - len(service))
-    struct.pack_into('%ds' % (MAX_DESCRIPTION_LENGTH,), packet, offset, service)
+        service += get_random_alphanumeric_bytes(
+            MAX_DESCRIPTION_LENGTH - len(service))
+    struct.pack_into(
+        '%ds' %
+        (MAX_DESCRIPTION_LENGTH,
+         ),
+        packet,
+        offset,
+        service)
     offset += struct.calcsize('!%ds' % (MAX_DESCRIPTION_LENGTH))
     # finally, pad & pack the plugin output
     output = output + b'\0'
     if len(output) < MAX_PLUGINOUTPUT_LENGTH:
-        output += get_random_alphanumeric_bytes(MAX_PLUGINOUTPUT_LENGTH - len(output))
-    struct.pack_into('%ds' % (MAX_PLUGINOUTPUT_LENGTH,), packet, offset, output)
+        output += get_random_alphanumeric_bytes(
+            MAX_PLUGINOUTPUT_LENGTH - len(output))
+    struct.pack_into(
+        '%ds' %
+        (MAX_PLUGINOUTPUT_LENGTH,
+         ),
+        packet,
+        offset,
+        output)
     # compute the CRC32 of what we have so far
     crc_val = binascii.crc32(packet) & 0xffffffff
     struct.pack_into('!L', packet, 4, crc_val)
@@ -290,14 +311,22 @@ class ConfigParseError(Exception):
         self.msg = msg
 
     def __str__(self):
-        return 'Configuration parsing error: [%s:%d] %s' % (self.filename, self.lineno, self.msg)
+        return 'Configuration parsing error: [%s:%d] %s' % (
+            self.filename, self.lineno, self.msg)
 
     def __repr__(self):
-        return 'ConfigParseError(%s, %d, %s)' % (self.filename, self.lineno, self.msg)
+        return 'ConfigParseError(%s, %d, %s)' % (
+            self.filename, self.lineno, self.msg)
 
 
 class NscaSender(object):
-    def __init__(self, remote_host, config_path='/etc/send_nsca.cfg', port=DEFAULT_PORT, timeout=10, send_to_all=True):
+    def __init__(
+            self,
+            remote_host,
+            config_path='/etc/send_nsca.cfg',
+            port=DEFAULT_PORT,
+            timeout=10,
+            send_to_all=True):
         """Constructor
 
         Arguments:
@@ -329,54 +358,77 @@ class NscaSender(object):
             try:
                 if key == b'password':
                     if len(value) > MAX_PASSWORD_LENGTH:
-                        raise ConfigParseError(config_path, line_no, 'Password too long; max %d' % MAX_PASSWORD_LENGTH)
+                        raise ConfigParseError(
+                            config_path, line_no, 'Password too long; max %d' %
+                            MAX_PASSWORD_LENGTH)
                     assert isinstance(value, bytes), value
                     self.password = value
                 elif key == b'encryption_method':
                     self.encryption_method_i = int(value)
                     if self.encryption_method_i not in crypters.keys():
                         raise ConfigParseError(
-                            config_path,
-                            line_no,
-                            'Unrecognized uncryption method %d' % (self.encryption_method_i,)
-                        )
+                            config_path, line_no, 'Unrecognized uncryption method %d' %
+                            (self.encryption_method_i,))
                     self.Crypter = crypters[self.encryption_method_i]
                     if issubclass(self.Crypter, UnsupportedCrypter):
                         raise ConfigParseError(
-                            config_path,
-                            line_no,
-                            'Unsupported cipher type %d (%s)' % (self.Crypter.crypt_id, self.Crypter.__name__)
-                        )
+                            config_path, line_no, 'Unsupported cipher type %d (%s)' %
+                            (self.Crypter.crypt_id, self.Crypter.__name__))
                 else:
-                    raise ConfigParseError(config_path, line_no, 'Unrecognized key \'%s\'' % (key,))
+                    raise ConfigParseError(
+                        config_path, line_no, 'Unrecognized key \'%s\'' %
+                        (key,))
             except ConfigParseError:
                 raise
-            except:
-                raise ConfigParseError(config_path, line_no, 'Could not parse value \'%s\' for key \'%s\'' % (value, key))
+            except BaseException:
+                raise ConfigParseError(
+                    config_path, line_no, 'Could not parse value \'%s\' for key \'%s\'' %
+                    (value, key))
 
-    def _check_alert(self, host=None, service=None, state=None, description=None):
+    def _check_alert(
+            self,
+            host=None,
+            service=None,
+            state=None,
+            description=None):
         if state not in States.keys():
-            raise ValueError('state %r should be one of {%s}' % (state, ','.join(map(str, States.keys()))))
+            raise ValueError('state %r should be one of {%s}' % (
+                state, ','.join(map(str, States.keys()))))
         if not isinstance(host, bytes):
             raise ValueError('host %r must be a non-unicode string' % (host))
         if len(host) > MAX_HOSTNAME_LENGTH:
-            raise ValueError('host %r too long (max length %d)' % (host, MAX_HOSTNAME_LENGTH))
+            raise ValueError(
+                'host %r too long (max length %d)' %
+                (host, MAX_HOSTNAME_LENGTH))
         if not isinstance(description, bytes):
-            raise ValueError('plugin output %r must be a non-unicode string' % (description))
+            raise ValueError(
+                'plugin output %r must be a non-unicode string' %
+                (description))
         if len(description) > MAX_PLUGINOUTPUT_LENGTH:
-            raise ValueError('plugin output %r too long (max length %d)' % (description, MAX_PLUGINOUTPUT_LENGTH))
+            raise ValueError(
+                'plugin output %r too long (max length %d)' %
+                (description, MAX_PLUGINOUTPUT_LENGTH))
         if service is not None:
             if not isinstance(service, bytes):
-                raise ValueError('service %r must be a non-unicode string' % (service))
+                raise ValueError(
+                    'service %r must be a non-unicode string' %
+                    (service))
             if len(service) > MAX_DESCRIPTION_LENGTH:
-                raise ValueError('service %r too long (max length %d)' % (service, MAX_DESCRIPTION_LENGTH))
+                raise ValueError(
+                    'service %r too long (max length %d)' %
+                    (service, MAX_DESCRIPTION_LENGTH))
 
     def send_service(self, host, service, state, description):
-        self._check_alert(host=host, service=service, state=state, description=description)
+        self._check_alert(
+            host=host,
+            service=service,
+            state=state,
+            description=description)
         self.connect()
         for conn, iv, timestamp in self._conns:
             if conn not in self._cached_crypters:
-                self._cached_crypters[conn] = self.Crypter(iv, self.password, self.random_generator)
+                self._cached_crypters[conn] = self.Crypter(
+                    iv, self.password, self.random_generator)
             crypter = self._cached_crypters[conn]
             packet = _pack_packet(host, service, state, description, timestamp)
             packet = crypter.encrypt(packet)
@@ -387,8 +439,18 @@ class NscaSender(object):
 
     def _sock_connect(self, host, port, timeout=None, connect_all=True):
         conns = []
-        for (family, socktype, proto, canonname, sockaddr) in socket.getaddrinfo(
-                host, port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, 0):
+        for (
+                family,
+                socktype,
+                proto,
+                canonname,
+                sockaddr) in socket.getaddrinfo(
+                host,
+                port,
+                socket.AF_UNSPEC,
+                socket.SOCK_STREAM,
+                0,
+                0):
             try:
                 s = socket.socket(family, socktype, proto)
                 s.connect(sockaddr)
@@ -400,7 +462,9 @@ class NscaSender(object):
             except socket.error:
                 continue
         if not conns:
-            raise socket.error('could not connect to %s:%d' % (self.remote_host, self.port))
+            raise socket.error(
+                'could not connect to %s:%d' %
+                (self.remote_host, self.port))
         return conns
 
     def _handshake_all(self, conns):
@@ -413,7 +477,11 @@ class NscaSender(object):
     def connect(self):
         if self._connected:
             return
-        conns = self._sock_connect(self.remote_host, self.port, self.timeout, connect_all=self.send_to_all)
+        conns = self._sock_connect(
+            self.remote_host,
+            self.port,
+            self.timeout,
+            connect_all=self.send_to_all)
         self._conns.extend(self._handshake_all(conns))
         self._connected = True
 
@@ -427,7 +495,8 @@ class NscaSender(object):
 
     def _read_init_packet(self, fd):
         init_packet = fd.recv(struct.calcsize(_init_packet_format))
-        transmitted_iv, timestamp = struct.unpack(_init_packet_format, init_packet)
+        transmitted_iv, timestamp = struct.unpack(
+            _init_packet_format, init_packet)
         return transmitted_iv, timestamp
 
     def __del__(self):
@@ -437,7 +506,13 @@ class NscaSender(object):
 ######## HELPER FUNCTIONS ########
 
 
-def send_nsca(status, host_name, service_name, text_output, remote_host, **kwargs):
+def send_nsca(
+        status,
+        host_name,
+        service_name,
+        text_output,
+        remote_host,
+        **kwargs):
     """Helper function to easily send a NSCA message (wraps .nsca.NscaSender)
 
     Arguments:
@@ -454,7 +529,8 @@ def send_nsca(status, host_name, service_name, text_output, remote_host, **kwarg
         n.send_service(host_name, service_name, status, text_output)
         n.disconnect()
     except Exception as e:
-        log.error("Unable to send NSCA packet to %s for %s:%s (%s)", remote_host, host_name, service_name, str(e))
+        log.error("Unable to send NSCA packet to %s for %s:%s (%s)",
+                  remote_host, host_name, service_name, str(e))
 
 
 def nsca_ok(host_name, service_name, text_output, remote_host, **kwargs):

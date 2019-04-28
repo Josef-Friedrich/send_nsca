@@ -13,9 +13,27 @@ class TestCrypter(NSCATestCase):
         nsca_sender.send_service('hello', 'goodbye', 2, 'CRITICAL')
         checks = self.expect_checks(3)
         self.assertEqual(len(checks), 3)
-        self.assertEqual(checks[0], ServiceCheckResult(host_name='hello', service_name='goodbye', status=0, output='SUCCESS'))
-        self.assertEqual(checks[1], ServiceCheckResult(host_name='hello', service_name='goodbye', status=1, output='WARN'))
-        self.assertEqual(checks[2], ServiceCheckResult(host_name='hello', service_name='goodbye', status=2, output='CRITICAL'))
+        self.assertEqual(
+            checks[0],
+            ServiceCheckResult(
+                host_name='hello',
+                service_name='goodbye',
+                status=0,
+                output='SUCCESS'))
+        self.assertEqual(
+            checks[1],
+            ServiceCheckResult(
+                host_name='hello',
+                service_name='goodbye',
+                status=1,
+                output='WARN'))
+        self.assertEqual(
+            checks[2],
+            ServiceCheckResult(
+                host_name='hello',
+                service_name='goodbye',
+                status=2,
+                output='CRITICAL'))
 
 
 class TestNullCrypter(TestCrypter):

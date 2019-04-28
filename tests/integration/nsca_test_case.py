@@ -46,8 +46,11 @@ def pick_unused_port():
     return port
 
 
-HostCheckResult = collections.namedtuple('HostCheckResult', ['host_name', 'status', 'output'])
-ServiceCheckResult = collections.namedtuple('ServiceCheckResult', ['host_name', 'service_name', 'status', 'output'])
+HostCheckResult = collections.namedtuple(
+    'HostCheckResult', ['host_name', 'status', 'output'])
+ServiceCheckResult = collections.namedtuple(
+    'ServiceCheckResult', [
+        'host_name', 'service_name', 'status', 'output'])
 
 
 class NSCATestCase(TestCase):
@@ -57,10 +60,16 @@ class NSCATestCase(TestCase):
 
     def _start_nsca(self):
         with open(self.nsca_config_path, 'w') as f:
-            f.write(NSCA_CFG_TEMPLATE % {'command_file': self.fifo_name, 'crypto_method': self.crypto_method, 'port': self.server_port})
+            f.write(
+                NSCA_CFG_TEMPLATE % {
+                    'command_file': self.fifo_name,
+                    'crypto_method': self.crypto_method,
+                    'port': self.server_port})
         with open(self.send_nsca_config_path, 'w') as f:
-            f.write(SEND_NSCA_CFG_TEMPLATE % {'crypto_method': self.crypto_method})
-        self.nsca_process = subprocess.Popen(['nsca', '-f', '-c', self.nsca_config_path])
+            f.write(SEND_NSCA_CFG_TEMPLATE %
+                    {'crypto_method': self.crypto_method})
+        self.nsca_process = subprocess.Popen(
+            ['nsca', '-f', '-c', self.nsca_config_path])
         time.sleep(0.25)  # give nsca a moment to start up
 
     def expect_checks(self, n_checks):
@@ -69,7 +78,8 @@ class NSCATestCase(TestCase):
         # daemon crashes for some reason
         start_time = time.time()
         poller = select.poll()
-        poller.register(self.read_end.fileno(), select.POLLIN | select.POLLHUP | select.POLLERR)
+        poller.register(self.read_end.fileno(),
+                        select.POLLIN | select.POLLHUP | select.POLLERR)
         now = time.time()
         lines = []
         hung_up = False
@@ -87,12 +97,17 @@ class NSCATestCase(TestCase):
             if len(lines) == n_checks:
                 break
         else:
-            raise AssertionError('Read %d lines after %0.2fs, expected %d' % (len(lines), (now - start_time), n_checks))
+            raise AssertionError(
+                'Read %d lines after %0.2fs, expected %d' %
+                (len(lines), (now - start_time), n_checks))
         return lines
 
     @property
     def nsca_sender_args(self):
-        return {'remote_host': '127.0.0.1', 'port': self.server_port, 'config_path': self.send_nsca_config_path}
+        return {
+            'remote_host': '127.0.0.1',
+            'port': self.server_port,
+            'config_path': self.send_nsca_config_path}
 
     def nsca_sender(self):
         return NscaSender(**self.nsca_sender_args)
@@ -104,18 +119,27 @@ class NSCATestCase(TestCase):
         time = time[1:-1]
         if rest.startswith('PROCESS_HOST_CHECK_RESULT'):
             _, host_name, status, output = rest.split(';')
-            return HostCheckResult(host_name=host_name, status=int(status), output=output)
+            return HostCheckResult(
+                host_name=host_name,
+                status=int(status),
+                output=output)
         elif rest.startswith('PROCESS_SERVICE_CHECK_RESULT'):
             _, host_name, service_name, status, output = rest.split(';')
-            return ServiceCheckResult(host_name=host_name, service_name=service_name, status=int(status), output=output)
+            return ServiceCheckResult(
+                host_name=host_name,
+                service_name=service_name,
+                status=int(status),
+                output=output)
         else:
             raise ValueError('Unexpected result type %s' % rest.split(';')[0])
 
     def setUp(self):
         self.working_directory = tempfile.mkdtemp()
         self.fifo_name = os.path.join(self.working_directory, 'nsca_fifo')
-        self.nsca_config_path = os.path.join(self.working_directory, 'nsca.cfg')
-        self.send_nsca_config_path = os.path.join(self.working_directory, 'send_nsca.cfg')
+        self.nsca_config_path = os.path.join(
+            self.working_directory, 'nsca.cfg')
+        self.send_nsca_config_path = os.path.join(
+            self.working_directory, 'send_nsca.cfg')
         os.mkfifo(self.fifo_name)
         read_fd = os.open(self.fifo_name, os.O_RDONLY | os.O_NONBLOCK)
         self.read_end = os.fdopen(read_fd)
@@ -131,10 +155,10 @@ class NSCATestCase(TestCase):
                     time.sleep(0.25)
                     if self.nsca_process.poll() is None:
                         self.nsca_process.kill()
-            except:
+            except BaseException:
                 pass
         try:
             self.read_end.close()
             shutil.rmtree(self.working_directory)
-        except:
+        except BaseException:
             pass
