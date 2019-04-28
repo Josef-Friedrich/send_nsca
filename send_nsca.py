@@ -1,23 +1,30 @@
-#!/usr/bin/python
-#
-# send_nsca.py: A replacement for the C-based send_nsca, able
-# to be run in pure-python. Depends on PyCrypto and Python >= 2.6.
-#
-# Heavily inspired by (and protocol-compatible with) the original send_nsca,
-# written by Ethan Galstad <nagios@nagios.org>, which was available under
-# the terms of the GNU General Public License v2.
-#
-# Not quite feature-complete. The simpler encryption algorithms (null,
-# XOR, DES, 3DES, Blowfish, ARC2, and CAST) work, but AES doesn't work
-# (the AES that nsca uses isn't compatible with PyCrypto's for reasons
-# that I haven't yet determined). Also, ARC4 is broken upstream, and I
-# didn't fix it.
-#
-# Copyright (C) 2012 Yelp, Inc.
-# Written by James Brown <jbrown@yelp.com>
-#
-# This software is available under the terms of the Lesser GNU Public
-# License, Version 2.1
+"""
+send_nsca.py: A replacement for the C-based send_nsca, able
+to be run in pure-python. Depends on PyCrypto and Python >= 2.6.
+
+Heavily inspired by (and protocol-compatible with) the original send_nsca,
+written by Ethan Galstad <nagios@nagios.org>, which was available under
+the terms of the GNU General Public License v2.
+
+Not quite feature-complete. The simpler encryption algorithms (null,
+XOR, DES, 3DES, Blowfish, ARC2, and CAST) work, but AES doesn't work
+(the AES that nsca uses isn't compatible with PyCrypto's for reasons
+that I haven't yet determined). Also, ARC4 is broken upstream, and I
+didn't fix it.
+
+Copyright (C) 2012 Yelp, Inc.
+Written by James Brown <jbrown@yelp.com>
+
+This software is available under the terms of the Lesser GNU Public
+License, Version 2.1
+
+Forked from `this repository at Github <https://github.com/Yelp/send_nsca/commit/8ad96b069c2bc200ca38dcc6fad0c7a8b3e47475>`_
+
+Changes on this fork:
+=====================
+
+* All code in one file.
+"""
 
 import array
 import binascii
