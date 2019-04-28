@@ -60,6 +60,7 @@ import socket
 import struct
 import six
 
+
 try:
     import Crypto.Cipher.AES
     import Crypto.Cipher.ARC2
@@ -69,7 +70,8 @@ try:
     import Crypto.Cipher.CAST
     import Crypto.Util.randpool
 except ImportError:
-    pass
+    from unittest.mock import Mock
+    Crypto = Mock()
 
 version_info = (0, 1, 4, 1)
 __version__ = ".".join(map(str, version_info)) + '-yelp1'
