@@ -64,7 +64,7 @@ password = 1234
             )
             if success:
                 self.sender.parse_config(stream)
-                self.assertEqual(self.sender.encryption_method_i, crypter)
+                self.assertEqual(self.sender.encryption_method, crypter)
             else:
                 self.assertRaises(
                     send_nsca.ConfigParseError,

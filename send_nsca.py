@@ -24,7 +24,11 @@ Changes on this fork:
 =====================
 
 * All code in one file.
+* PEP 8
 * Python 3 only
+* Add arguments: `password` and `encryption_method`. No need for a
+  configuration file anymore.
+* Works without `pycrypto` (only `encryption_method` 1 works)
 """  # noqa: E501
 
 import array
@@ -319,13 +323,9 @@ class ConfigParseError(Exception):
 
 
 class NscaSender(object):
-    def __init__(
-            self,
-            remote_host,
-            config_path='/etc/send_nsca.cfg',
-            port=DEFAULT_PORT,
-            timeout=10,
-            send_to_all=True):
+    def __init__(self, remote_host, config_path='/etc/send_nsca.cfg',
+                 port=DEFAULT_PORT, timeout=10, send_to_all=True, password='',
+                 encryption_method=0):
         """Constructor
 
         Arguments:
@@ -333,12 +333,15 @@ class NscaSender(object):
                         /etc/send_nsca.cfg. None to disable.
             remote_host: host to send to
             send_to_all: If true, will repeat your message to *all* hosts
-                         that match the lookup for remote_host
+                         that match the lookup for remote_hos0
+            password: The NSCA password. Max password length: 512
+            encryption_method: An integer. The NSCA encryption method.
+                The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
         """
         self.port = port
         self.timeout = timeout
-        self.password = ''
-        self.encryption_method_i = 0
+        self.encryption_method = 0
+        self.password = password
         self.remote_host = remote_host
         self.send_to_all = send_to_all
         self._conns = []
@@ -346,9 +349,36 @@ class NscaSender(object):
         self.Crypter = Crypter
         self._cached_crypters = {}
         self.random_generator = os.urandom
-        if config_path is not None:
+        if config_path is not None and not \
+           (self.password or self.encryption_method):
             with open(config_path, 'rb') as f:
                 self.parse_config(f, config_path=config_path)
+        else:
+            if encryption_method:
+                self._setup_encryption_method(encryption_method)
+            if password:
+                self._setup_password(bytes(password.encode()))
+
+    def _setup_encryption_method(self, encryption_method, config_path=None,
+                                 line_no=0):
+        self.encryption_method = encryption_method
+        if self.encryption_method not in crypters.keys():
+            raise ConfigParseError(
+                config_path, line_no, 'Unrecognized uncryption method %d' %  # noqa: E501
+                (self.encryption_method,))
+        self.Crypter = crypters[self.encryption_method]
+        if issubclass(self.Crypter, UnsupportedCrypter):
+            raise ConfigParseError(
+                config_path, line_no, 'Unsupported cipher type %d (%s)' %  # noqa: E501
+                (self.Crypter.crypt_id, self.Crypter.__name__))
+
+    def _setup_password(self, password, config_path=None, line_no=0):
+        if len(password) > MAX_PASSWORD_LENGTH:
+            raise ConfigParseError(
+                config_path, line_no, 'Password too long; max %d' %
+                MAX_PASSWORD_LENGTH)
+        assert isinstance(password, bytes), password
+        self.password = password
 
     def parse_config(self, config_file_object, config_path=''):
         config_file_object.seek(0)
@@ -358,23 +388,10 @@ class NscaSender(object):
             key, value = [res.strip() for res in line.split(b'=')]
             try:
                 if key == b'password':
-                    if len(value) > MAX_PASSWORD_LENGTH:
-                        raise ConfigParseError(
-                            config_path, line_no, 'Password too long; max %d' %
-                            MAX_PASSWORD_LENGTH)
-                    assert isinstance(value, bytes), value
-                    self.password = value
+                    self._setup_password(value, config_path, line_no)
                 elif key == b'encryption_method':
-                    self.encryption_method_i = int(value)
-                    if self.encryption_method_i not in crypters.keys():
-                        raise ConfigParseError(
-                            config_path, line_no, 'Unrecognized uncryption method %d' %  # noqa: E501
-                            (self.encryption_method_i,))
-                    self.Crypter = crypters[self.encryption_method_i]
-                    if issubclass(self.Crypter, UnsupportedCrypter):
-                        raise ConfigParseError(
-                            config_path, line_no, 'Unsupported cipher type %d (%s)' %  # noqa: E501
-                            (self.Crypter.crypt_id, self.Crypter.__name__))
+                    self._setup_encryption_method(int(value), config_path,
+                                                  line_no)
                 else:
                     raise ConfigParseError(
                         config_path, line_no, 'Unrecognized key \'%s\'' %
