@@ -1,7 +1,5 @@
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
+
 
 setup(
     name="send_nsca",
@@ -18,6 +16,7 @@ setup(
         "Intended Audience :: Developers",
         "Development Status :: 4 - Beta",
     ],
+    packages=find_packages(),
     scripts=["bin/py_send_nsca"],
     install_requires=['six'],
     long_description="""send_nsca -- a pure-python nsca sender
