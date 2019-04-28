@@ -3,7 +3,7 @@ import socket
 from unittest import TestCase, mock
 
 import send_nsca
-from send_nsca.nsca import DEFAULT_PORT
+from send_nsca import DEFAULT_PORT
 
 
 class TestConnectionLogic(TestCase):

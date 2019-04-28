@@ -10,7 +10,7 @@ from .. import util
 
 class TestConfig(TestCase):
     def setUp(self):
-        self.sender = send_nsca.nsca.NscaSender(b'test_host', config_path=None)
+        self.sender = send_nsca.NscaSender(b'test_host', config_path=None)
 
     def test_ignores_comments(self):
         stream = io.BytesIO()
@@ -26,12 +26,12 @@ password = 1234
         stream.write(b'password = ')
         stream.write(util.get_chrs(513))
         stream.write(b'\n')
-        self.assertRaises(send_nsca.nsca.ConfigParseError, self.sender.parse_config, stream)
+        self.assertRaises(send_nsca.ConfigParseError, self.sender.parse_config, stream)
 
     def test_yells_at_random_keys(self):
         stream = io.BytesIO()
         stream.write(b'foo = bar\n')
-        self.assertRaises(send_nsca.nsca.ConfigParseError, self.sender.parse_config, stream)
+        self.assertRaises(send_nsca.ConfigParseError, self.sender.parse_config, stream)
 
     def test_get_encryption_method(self):
         # map from crypter id to whether or not it should succeed
@@ -61,4 +61,4 @@ password = 1234
                 self.sender.parse_config(stream)
                 self.assertEqual(self.sender.encryption_method_i, crypter)
             else:
-                self.assertRaises(send_nsca.nsca.ConfigParseError, self.sender.parse_config, stream)
+                self.assertRaises(send_nsca.ConfigParseError, self.sender.parse_config, stream)

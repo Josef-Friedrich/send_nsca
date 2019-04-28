@@ -10,7 +10,7 @@ import time
 
 from unittest import TestCase
 
-from send_nsca.nsca import NscaSender
+from send_nsca import NscaSender
 
 
 NSCA_CFG_TEMPLATE = """
