@@ -29,6 +29,25 @@ Changes on this fork:
 * Add arguments: `password` and `encryption_method`. No need for a
   configuration file anymore.
 * Works without `pycrypto` (only `encryption_method` 1 works)
+
+Another interesting Python package that sends NSCA messages is
+`pynsca https://github.com/djmitche/pynsca`_.
+
+Usage
+=====
+
+.. code:: python
+    import send_nsca
+    send_nsca.send_nsca(
+        status=send_nsca.STATE_OK,
+        host_name='host',
+        service_name='service',
+        text_output='output',
+        remote_host='1.2.3.4',
+        password='1234'
+        encryption_method=1
+    )
+
 """  # noqa: E501
 
 import array
