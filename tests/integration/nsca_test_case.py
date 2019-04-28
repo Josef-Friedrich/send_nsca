@@ -1,3 +1,7 @@
+"""
+`FIFO = Named pipe <https://en.wikipedia.org/wiki/Named_pipe>`_
+"""
+
 import collections
 import os
 import os.path
