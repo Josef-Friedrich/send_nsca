@@ -114,7 +114,8 @@ class TestConnectionLogic(TestCase):
         mock_read_iv = mock.Mock(return_value=(self.sigil_one, self.sigil_two))
         with mock.patch('socket.getaddrinfo', mock_getaddrinfo):
             with mock.patch('socket.socket', mock_socket):
-                with mock.patch.object(self.sender, '_read_init_packet', mock_read_iv):
+                with mock.patch.object(self.sender, '_read_init_packet',
+                                       mock_read_iv):
                     self.sender.connect()
         mock_socket.assert_any_call(
             socket.AF_INET,
@@ -135,7 +136,8 @@ class TestConnectionLogic(TestCase):
         test_timeout = 1024
         with mock.patch('socket.getaddrinfo', mock_getaddrinfo):
             with mock.patch('socket.socket', mock_socket):
-                with mock.patch.object(self.sender, '_read_init_packet', mock_read_iv):
+                with mock.patch.object(self.sender, '_read_init_packet',
+                                       mock_read_iv):
                     self.sender.timeout = test_timeout
                     self.sender.connect()
                     assert not mock_socket.return_value.close.called

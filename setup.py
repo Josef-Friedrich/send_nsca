@@ -13,13 +13,13 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Operating System :: OS Independent",
-        "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",
+        "License :: OSI Approved :: GNU Lesser General Public License v2 (LGPLv2)",  # noqa: E501
         "Topic :: System :: Monitoring",
         "Intended Audience :: Developers",
         "Development Status :: 4 - Beta",
     ],
     scripts=["bin/py_send_nsca"],
-    install_requires=["pycrypto>=2.0.0", 'six',],
+    install_requires=["pycrypto>=2.0.0", 'six'],
     tests_require=["nose", "mock==1.0.1"],
     long_description="""send_nsca -- a pure-python nsca sender
 

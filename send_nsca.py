@@ -25,11 +25,10 @@ Changes on this fork:
 
 * All code in one file.
 * Python 3 only
-"""
+"""  # noqa: E501
 
 import array
 import binascii
-import functools
 import logging
 import math
 import os
@@ -66,7 +65,7 @@ DEFAULT_PORT = 5667
 
 log = logging.getLogger('send_nsca')
 
-########  NAGIOS ########
+# NAGIOS ########
 
 STATE_OK = 0
 STATE_WARNING = 1
@@ -81,7 +80,7 @@ States = {
 }
 
 
-########  CIPHERS AND CRYPTERS IMPLEMENTATION ########
+# CIPHERS AND CRYPTERS IMPLEMENTATION ########
 
 crypters = {}
 
@@ -125,7 +124,7 @@ class XORCrypter(Crypter):
         repeated_iv = six.iterbytes(
             list(int(math.ceil(float(len(value)) / len(self.iv))) * self.iv))
         repeated_password = six.iterbytes(
-            list(int(math.ceil(float(len(value)) / len(self.password))) * self.password))
+            list(int(math.ceil(float(len(value)) / len(self.password))) * self.password))  # noqa: E501
         xor1 = [a ^ b for a, b in zip(value_s, repeated_iv)]
         xor2 = [a ^ b for a, b in zip(xor1, repeated_password)]
         return b''.join(map(six.int2byte, xor2))
@@ -241,7 +240,7 @@ class AES256Crypter(CryptoCrypter):
     CryptoCipher = Crypto.Cipher.AES
     key_size = 32
 
-########  WIRE PROTOCOL IMPLEMENTATION ########
+# WIRE PROTOCOL IMPLEMENTATION ########
 
 
 _data_packet_format = '!hxxLLh%ds%ds%dsxx' % (
@@ -302,7 +301,7 @@ def _pack_packet(hostname, service, state, output, timestamp):
     return packet.tostring()
 
 
-########  MAIN CLASS IMPLEMENTATION ########
+# MAIN CLASS IMPLEMENTATION ########
 
 class ConfigParseError(Exception):
     def __init__(self, filename, lineno, msg):
@@ -330,9 +329,11 @@ class NscaSender(object):
         """Constructor
 
         Arguments:
-            config_path: path to the nsca config file. Usually /etc/send_nsca.cfg. None to disable.
+            config_path: path to the nsca config file. Usually
+                        /etc/send_nsca.cfg. None to disable.
             remote_host: host to send to
-            send_to_all: If true, will repeat your message to *all* hosts that match the lookup for remote_host
+            send_to_all: If true, will repeat your message to *all* hosts
+                         that match the lookup for remote_host
         """
         self.port = port
         self.timeout = timeout
@@ -367,12 +368,12 @@ class NscaSender(object):
                     self.encryption_method_i = int(value)
                     if self.encryption_method_i not in crypters.keys():
                         raise ConfigParseError(
-                            config_path, line_no, 'Unrecognized uncryption method %d' %
+                            config_path, line_no, 'Unrecognized uncryption method %d' %  # noqa: E501
                             (self.encryption_method_i,))
                     self.Crypter = crypters[self.encryption_method_i]
                     if issubclass(self.Crypter, UnsupportedCrypter):
                         raise ConfigParseError(
-                            config_path, line_no, 'Unsupported cipher type %d (%s)' %
+                            config_path, line_no, 'Unsupported cipher type %d (%s)' %  # noqa: E501
                             (self.Crypter.crypt_id, self.Crypter.__name__))
                 else:
                     raise ConfigParseError(
@@ -382,7 +383,7 @@ class NscaSender(object):
                 raise
             except BaseException:
                 raise ConfigParseError(
-                    config_path, line_no, 'Could not parse value \'%s\' for key \'%s\'' %
+                    config_path, line_no, 'Could not parse value \'%s\' for key \'%s\'' %  # noqa: E501
                     (value, key))
 
     def _check_alert(
@@ -503,7 +504,7 @@ class NscaSender(object):
         self.disconnect()
 
 
-######## HELPER FUNCTIONS ########
+# HELPER FUNCTIONS ########
 
 
 def send_nsca(

@@ -88,10 +88,10 @@ class NSCATestCase(TestCase):
             now = time.time()
             while True:
                 try:
-                    l = self.read_end.readline()
-                    if not l.rstrip('\n'):
+                    line = self.read_end.readline()
+                    if not line.rstrip('\n'):
                         break
-                    lines.append(self.parse_line(l))
+                    lines.append(self.parse_line(line))
                 except IOError:
                     break
             if len(lines) == n_checks:
@@ -113,9 +113,9 @@ class NSCATestCase(TestCase):
         return NscaSender(**self.nsca_sender_args)
 
     @staticmethod
-    def parse_line(l):
-        l = l.rstrip('\n')
-        time, rest = l.split(' ', 1)
+    def parse_line(line):
+        line = line.rstrip('\n')
+        time, rest = line.split(' ', 1)
         time = time[1:-1]
         if rest.startswith('PROCESS_HOST_CHECK_RESULT'):
             _, host_name, status, output = rest.split(';')

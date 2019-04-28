@@ -1,6 +1,5 @@
 import io
 
-import six
 from unittest import TestCase
 
 import send_nsca
