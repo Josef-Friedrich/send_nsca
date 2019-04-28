@@ -26,6 +26,15 @@ class ConvenienceFunctionTest(NSCATestCase):
             **self.nsca_sender_args)
         self.assertions(0, 'OK')
 
+    def test_send_nsca_input_str(self):
+        send_nsca.send_nsca(
+            0,
+            'myhost',
+            'myservice',
+            'OK',
+            **self.nsca_sender_args)
+        self.assertions(0, 'OK')
+
     def test_send_nsca_arguments_password_encryption_method(self):
         send_nsca.send_nsca(
             0,

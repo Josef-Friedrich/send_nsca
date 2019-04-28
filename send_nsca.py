@@ -344,6 +344,17 @@ class ConfigParseError(Exception):
             self.filename, self.lineno, self.msg)
 
 
+def _bytes(value):
+    """To allow `bytes` input as well as `str` for the arguemnts `host`,
+    `service` and `description`."""
+    if isinstance(value, bytes):
+        return value
+    elif isinstance(value, str):
+        return value.encode('ascii')
+    raise ValueError('Input {} is not an instance of bytes or str'
+                     .format(value))
+
+
 class NscaSender(object):
     def __init__(self, remote_host, config_path='/etc/send_nsca.cfg',
                  port=DEFAULT_PORT, timeout=10, send_to_all=True, password='',
@@ -459,6 +470,9 @@ class NscaSender(object):
                     (service, MAX_DESCRIPTION_LENGTH))
 
     def send_service(self, host, service, state, description):
+        host = _bytes(host)
+        service = _bytes(service)
+        description = _bytes(description)
         self._check_alert(
             host=host,
             service=service,
