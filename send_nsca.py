@@ -72,7 +72,7 @@ import random
 import socket
 import struct
 import six
-
+from typing import Union
 
 try:
     import Crypto.Cipher.AES
@@ -356,9 +356,12 @@ class ConfigParseError(Exception):
             self.filename, self.lineno, self.msg)
 
 
-def _bytes(value):
-    """To allow `bytes` input as well as `str` for the arguemnts `host`,
-    `service` and `description`."""
+def _bytes(value: Union[str, bytes]) -> bytes:
+    """Convert str into bytes. To allow `bytes` input as well as `str` for
+    the arguemnts `host`, `service` and `description`.
+
+    :param value: Input as str or bytes.
+    """
     if isinstance(value, bytes):
         return value
     elif isinstance(value, str):
@@ -368,21 +371,24 @@ def _bytes(value):
 
 
 class NscaSender(object):
-    def __init__(self, remote_host, config_path='/etc/send_nsca.cfg',
-                 port=DEFAULT_PORT, timeout=10, send_to_all=True, password='',
-                 encryption_method=0):
-        """Constructor
+    """Send NSCA messages.
 
-        Arguments:
-            config_path: path to the nsca config file. Usually
-                        /etc/send_nsca.cfg. None to disable.
-            remote_host: host to send to
-            send_to_all: If true, will repeat your message to *all* hosts
-                         that match the lookup for remote_hos0
-            password: The NSCA password. Max password length: 512
-            encryption_method: An integer. The NSCA encryption method.
-                The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
-        """
+    :param remote_host: host to send to
+    :param config_path: path to the nsca config file. Usually
+      `/etc/send_nsca.cfg`. None to disable.
+    :param port: The port the NSCA server listen to.
+    :param send_to_all: If true, will repeat your message to *all* hosts
+      that match the lookup for remote_hos0
+    :param password: The NSCA password. Max password length: 512
+    :param encryption_method: An integer. The NSCA encryption method.
+        The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
+    """
+    def __init__(self, remote_host: str,
+                 config_path: str = '/etc/send_nsca.cfg',
+                 port: int = DEFAULT_PORT, timeout: int = 10,
+                 send_to_all: bool = True, password: str = '',
+                 encryption_method: int = 0):
+
         self.port = port
         self.timeout = timeout
         self.encryption_method = 0
@@ -425,7 +431,7 @@ class NscaSender(object):
         assert isinstance(password, bytes), password
         self.password = password
 
-    def parse_config(self, config_file_object, config_path=''):
+    def parse_config(self, config_file_object, config_path: str = ''):
         config_file_object.seek(0)
         for line_no, line in enumerate(config_file_object):
             if b'=' not in line or line.lstrip().startswith(b'#'):
@@ -448,21 +454,22 @@ class NscaSender(object):
                     config_path, line_no, 'Could not parse value \'%s\' for key \'%s\'' %  # noqa: E501
                     (value, key))
 
-    def _check_alert(
-            self,
-            host=None,
-            service=None,
-            state=None,
-            description=None):
+    def _check_alert(self, host: bytes = None, service: bytes = None,
+                     state: int = None, description: bytes = None):
+        # state
         if state not in States.keys():
             raise ValueError('state %r should be one of {%s}' % (
                 state, ','.join(map(str, States.keys()))))
+
+        # host
         if not isinstance(host, bytes):
             raise ValueError('host %r must be a non-unicode string' % (host))
         if len(host) > MAX_HOSTNAME_LENGTH:
             raise ValueError(
                 'host %r too long (max length %d)' %
                 (host, MAX_HOSTNAME_LENGTH))
+
+        # description
         if not isinstance(description, bytes):
             raise ValueError(
                 'plugin output %r must be a non-unicode string' %
@@ -471,6 +478,8 @@ class NscaSender(object):
             raise ValueError(
                 'plugin output %r too long (max length %d)' %
                 (description, MAX_PLUGINOUTPUT_LENGTH))
+
+        # service
         if service is not None:
             if not isinstance(service, bytes):
                 raise ValueError(
@@ -481,7 +490,14 @@ class NscaSender(object):
                     'service %r too long (max length %d)' %
                     (service, MAX_DESCRIPTION_LENGTH))
 
-    def send_service(self, host, service, state, description):
+    def send_service(self, host: Union[str, bytes], service: Union[str, bytes],
+                     state: int, description: Union[str, bytes]):
+        """
+        :param host: Host name to report as
+        :param service: Service to report as
+        :param state: Integer describing the status
+        :param description: Freeform text, should be under 512b
+        """
         host = _bytes(host)
         service = _bytes(service)
         description = _bytes(description)
@@ -500,7 +516,13 @@ class NscaSender(object):
             packet = crypter.encrypt(packet)
             conn.sendall(packet)
 
-    def send_host(self, host, state, description):
+    def send_host(self, host: Union[str, bytes], state: int,
+                  description: Union[str, bytes]):
+        """
+        :param host: Host name to report as
+        :param state: Integer describing the status
+        :param description: Freeform text, should be under 512b
+        """
         return self.send_service(host, b'', state, description)
 
     def _sock_connect(self, host, port, timeout=None, connect_all=True):
@@ -572,22 +594,24 @@ class NscaSender(object):
 # HELPER FUNCTIONS ########
 
 
-def send_nsca(
-        status,
-        host_name,
-        service_name,
-        text_output,
-        remote_host,
-        **kwargs):
+def send_nsca(status: int, host_name: Union[str, bytes],
+              service_name: Union[str, bytes], text_output: Union[str, bytes],
+              remote_host: str, **kwargs):
     """Helper function to easily send a NSCA message (wraps .nsca.NscaSender)
 
-    :param int status: Integer describing the status
-    :param str|bytes host_name: Host name to report as
-    :param str|bytes service_name: Service to report as
-    :param str|bytes text_output: Freeform text, should be under 512b
-    :param str remote_host: Host name to send to
-
-    All other arguments are passed to the :py:class:`NscaSender` constructor
+    :param status: Integer describing the status
+    :param host_name: Host name to report as
+    :param service_name: Service to report as
+    :param text_output: Freeform text, should be under 512b
+    :param remote_host: Host name to send to
+    :param str config_path: path to the nsca config file. Usually
+      `/etc/send_nsca.cfg`. None to disable.
+    :param int port: The port the NSCA server listen to.
+    :param bool send_to_all: If true, will repeat your message to *all* hosts
+      that match the lookup for remote_hos0
+    :param str password: The NSCA password. Max password length: 512
+    :param int encryption_method: An integer. The NSCA encryption method.
+        The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
     """
     try:
         n = NscaSender(remote_host=remote_host, **kwargs)
@@ -598,15 +622,22 @@ def send_nsca(
                   remote_host, host_name, service_name, str(e))
 
 
-def nsca_ok(host_name, service_name, text_output, remote_host, **kwargs):
+def nsca_ok(host_name: Union[str, bytes], service_name: Union[str, bytes],
+            text_output: Union[str, bytes], remote_host: str, **kwargs):
     """Wrapper for the send_nsca() function to easily send an OK
 
-    :param str|bytes host_name: Host name to report as
-    :param str|bytes service_name: Service to report as
-    :param str|bytes text_output: Freeform text, should be under 512b
-    :param str remote_host: Host name to send to
-
-    All other arguments are passed to the :py:class:`NscaSender` constructor
+    :param host_name: Host name to report as
+    :param service_name: Service to report as
+    :param text_output: Freeform text, should be under 512b
+    :param remote_host: Host name to send to
+    :param str config_path: path to the nsca config file. Usually
+      `/etc/send_nsca.cfg`. None to disable.
+    :param int port: The port the NSCA server listen to.
+    :param bool send_to_all: If true, will repeat your message to *all* hosts
+      that match the lookup for remote_hos0
+    :param str password: The NSCA password. Max password length: 512
+    :param int encryption_method: An integer. The NSCA encryption method.
+        The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
     """
     return send_nsca(
         status=STATE_OK,
@@ -618,15 +649,22 @@ def nsca_ok(host_name, service_name, text_output, remote_host, **kwargs):
     )
 
 
-def nsca_warning(host_name, service_name, text_output, remote_host, **kwargs):
+def nsca_warning(host_name: Union[str, bytes], service_name: Union[str, bytes],
+                 text_output: Union[str, bytes], remote_host: str, **kwargs):
     """Wrapper for the send_nsca() function to easily send a WARNING
 
-    :param str|bytes host_name: Host name to report as
-    :param str|bytes service_name: Service to report as
-    :param str|bytes text_output: Freeform text, should be under 512b
-    :param str remote_host: Host name to send to
-
-    All other arguments are passed to the :py:class:`NscaSender` constructor
+    :param host_name: Host name to report as
+    :param service_name: Service to report as
+    :param text_output: Freeform text, should be under 512b
+    :param remote_host: Host name to send to
+    :param str config_path: path to the nsca config file. Usually
+      `/etc/send_nsca.cfg`. None to disable.
+    :param int port: The port the NSCA server listen to.
+    :param bool send_to_all: If true, will repeat your message to *all* hosts
+      that match the lookup for remote_hos0
+    :param str password: The NSCA password. Max password length: 512
+    :param int encryption_method: An integer. The NSCA encryption method.
+        The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
     """
     return send_nsca(
         status=STATE_WARNING,
@@ -638,15 +676,23 @@ def nsca_warning(host_name, service_name, text_output, remote_host, **kwargs):
     )
 
 
-def nsca_critical(host_name, service_name, text_output, remote_host, **kwargs):
+def nsca_critical(host_name: Union[str, bytes],
+                  service_name: Union[str, bytes],
+                  text_output: Union[str, bytes], remote_host: str, **kwargs):
     """Wrapper for the send_nsca() function to easily send a CRITICAL
 
-    :param str|bytes host_name: Host name to report as
-    :param str|bytes service_name: Service to report as
-    :param str|bytes text_output: Freeform text, should be under 512b
-    :param str remote_host: Host name to send to
-
-    All other arguments are passed to the :py:class:`NscaSender` constructor
+    :param host_name: Host name to report as
+    :param service_name: Service to report as
+    :param text_output: Freeform text, should be under 512b
+    :param remote_host: Host name to send to
+    :param str config_path: path to the nsca config file. Usually
+      `/etc/send_nsca.cfg`. None to disable.
+    :param int port: The port the NSCA server listen to.
+    :param bool send_to_all: If true, will repeat your message to *all* hosts
+      that match the lookup for remote_hos0
+    :param str password: The NSCA password. Max password length: 512
+    :param int encryption_method: An integer. The NSCA encryption method.
+        The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
     """
     return send_nsca(
         status=STATE_CRITICAL,
@@ -658,15 +704,22 @@ def nsca_critical(host_name, service_name, text_output, remote_host, **kwargs):
     )
 
 
-def nsca_unknown(host_name, service_name, text_output, remote_host, **kwargs):
+def nsca_unknown(host_name: Union[str, bytes], service_name: Union[str, bytes],
+                 text_output: Union[str, bytes], remote_host: str, **kwargs):
     """Wrapper for the send_nsca() function to easily send an UNKNONW
 
-    :param str|bytes host_name: Host name to report as
-    :param str|bytes service_name: Service to report as
-    :param str|bytes text_output: Freeform text, should be under 512b
-    :param str remote_host: Host name to send to
-
-    All other arguments are passed to the :py:class:`NscaSender` constructor
+    :param host_name: Host name to report as
+    :param service_name: Service to report as
+    :param text_output: Freeform text, should be under 512b
+    :param remote_host: Host name to send to
+    :param str config_path: path to the nsca config file. Usually
+      `/etc/send_nsca.cfg`. None to disable.
+    :param int port: The port the NSCA server listen to.
+    :param bool send_to_all: If true, will repeat your message to *all* hosts
+      that match the lookup for remote_hos0
+    :param str password: The NSCA password. Max password length: 512
+    :param int encryption_method: An integer. The NSCA encryption method.
+        The supported encryption methods are: 0 1 2 3 4 8 11 14 15 16'
     """
     return send_nsca(
         status=STATE_UNKNOWN,
